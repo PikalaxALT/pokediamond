@@ -37,15 +37,7 @@ endif
 
 ################ Target Executable and Sources ###############
 
-BUILD_DIR := build
-
-TARGET := arm9
-
-ROM := $(BUILD_DIR)/$(TARGET).sbin
-ELF := $(BUILD_DIR)/$(TARGET).elf
-LD_SCRIPT := $(TARGET).lcf
-LD_SPEC := $(TARGET).lsf
-LD_TEMPLATE := ARM9-TS.lcf.template
+BUILD_DIR := build/$(TARGET)
 
 # Directories containing source files
 SRC_DIRS := src lib lib/src $(wildcard modules/*/src)
@@ -61,6 +53,8 @@ S_OBJS = $(S_FILES:%.s=$(BUILD_DIR)/%.o)
 
 # Object files
 O_FILES := $(C_OBJS) $(CXX_OBJS) $(S_OBJS)
+
+OBJS_REL := $(O_FILES:$(BUILD_DIR)/%=%)
 
 # Overlay modules
 OVERLAYS :=   \
@@ -177,7 +171,7 @@ AS      = $(WINE) $(MWASMARM)
 CC      = $(WINE) $(MWCCARM)
 CXX     = $(WINE) $(MWCCARM)
 CPP     := cpp -P
-LD      = $(WINE) $(MWLDARM)
+LD      = $(WINE) ../../$(MWLDARM)
 AR      := $(CROSS)ar
 OBJDUMP := $(CROSS)objdump
 OBJCOPY := $(CROSS)objcopy
@@ -204,9 +198,16 @@ TOOLS = $(foreach tool,$(TOOLBASE),$(TOOLS_DIR)/$(tool)/$(tool)$(EXE))
 
 export LM_LICENSE_FILE := $(TOOLS_DIR)/mwccarm/license.dat
 export MWCIncludes := $(CURDIR)/lib/include
-export MWLibraries := $(CURDIR)/lib
 
 ######################### Targets ###########################
+
+PROC := arm9
+
+ROM := $(BUILD_DIR)/$(PROC).sbin
+ELF := $(BUILD_DIR)/$(PROC).elf
+LD_SCRIPT := $(PROC).lcf
+LD_SPEC := $(PROC).lsf
+LD_TEMPLATE := ARM9-TS.lcf.template
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
@@ -225,7 +226,7 @@ MAKEFLAGS += --no-print-directory
 
 all: libs $(ROM)
 ifeq ($(COMPARE),1)
-	@$(SHA1SUM) -c $(TARGET).sha1
+	@$(SHA1SUM) -c $(PROC)_$(TARGET).sha1
 	@echo $(ROM): OK
 endif
 
@@ -257,7 +258,7 @@ ALL_DIRS := $(BUILD_DIR) $(addprefix $(BUILD_DIR)/,$(SRC_DIRS) $(ASM_DIRS))
 ######################## Special Rules ########################
 
 # TODO: Move out to lib/Makefile
-build/lib/src/%.o: MWCCVERSION = 1.2/sp2p3
+$(BUILD_DIR)/lib/src/%.o: MWCCVERSION = 1.2/sp2p3
 
 ####################### Everything Else ######################
 
@@ -282,8 +283,9 @@ $(S_OBJS): $(BUILD_DIR)/%.o: %.s $$(dep)
 $(BUILD_DIR)/$(LD_SCRIPT): $(LD_SCRIPT)
 	$(CPP) $(VERSION_CFLAGS) -MMD -MP -MT $@ -MF $@.d -I include/ -I . -DBUILD_DIR=$(BUILD_DIR) -o $@ $<
 
-$(ROM): $(O_FILES) $(BUILD_DIR)/$(LD_SCRIPT) $(BIN_FILES)
-	$(LD) $(LDFLAGS) $(LIBS) $(BUILD_DIR)/$(LD_SCRIPT) -o $(ELF) $(O_FILES) $(BIN_FILES)
+$(ROM): LM_LICENSE_FILE = ../../$(TOOLS_DIR)/mwccarm/license.dat
+$(ROM): $(BUILD_DIR)/$(LD_SCRIPT) $(O_FILES)
+	cd $(BUILD_DIR) && $(LD) $(LDFLAGS) $(LIBS) -o ../../$(ELF) $(LD_SCRIPT) $(OBJS_REL)
 	$(OBJCOPY) --update-section arm9=$@ -j arm9 $(foreach ov,$(OVERLAYS),--update-section $(ov)=$(BUILD_DIR)/$(ov).sbin -j $(ov)) $(ELF) 2>/dev/null
 
 # Make sure build directory exists before compiling anything

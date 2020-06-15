@@ -1,2 +1,22 @@
-GAME_VERSION := DIAMOND
-GAME_LANGUAGE := ENGLISH
+GAME_VERSION ?= DIAMOND
+GAME_LANGUAGE ?= ENGLISH
+
+ifeq ($(GAME_VERSION),PEARL)
+GAME_TITLE := POKEMON P
+GAME_CODE := APA
+TARGET := pokepearl
+else
+ifeq ($(GAME_VERSION),DIAMOND)
+GAME_TITLE := POKEMON D
+GAME_CODE := ADA
+TARGET := pokediamond
+else
+$(error Invalid value for GAME_VERSION: $(GAME_VERSION))
+endif
+endif
+
+ifeq ($(GAME_LANGUAGE),ENGLISH)
+GAME_CODE := $(GAME_CODE)E
+else
+$(error Invalid value for GAME_LANGUAGE: $(GAME_LANGUAGE))
+endif
