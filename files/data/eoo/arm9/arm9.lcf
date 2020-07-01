@@ -1,0 +1,29 @@
+
+MEMORY
+{
+	arm9		(RWX) : ORIGIN = 0x02000000,   LENGTH = 0x0 >  arm9.sbin
+	ITCM		(RWX) : ORIGIN = 0x01ff8000, LENGTH = 0x0 >> arm9.sbin
+	DTCM		(RWX) : ORIGIN = 0x027e0000, LENGTH = 0x0 >> arm9.sbin
+	EXT		(RWX) : ORIGIN = 0x02400000, LENGTH = 0x0 >> arm9.sbin
+	binary.AUTOLOAD_INFO		(RWX) : ORIGIN = 0, LENGTH = 0x0 >> arm9.sbin
+	binary.STATIC_FOOTER		(RWX) : ORIGIN = 0, LENGTH = 0x0 >> arm9.sbin
+
+	arm9_defs	(RW)  : ORIGIN = AFTER(arm9), LENGTH = 0x0 > arm9_defs.sbin
+	arm9_table	(RW)  : ORIGIN = AFTER(arm9), LENGTH = 0x0 > arm9_table.sbin
+	dummy.MAIN_EX		(RW)  : ORIGIN = 0x023e0000, LENGTH = 0x0
+	arena.MAIN			(RW)  : ORIGIN = AFTER(arm9), LENGTH = 0x0
+	arena.MAIN_EX		(RW)  : ORIGIN = AFTER(dummy.MAIN_EX), LENGTH = 0x0
+	arena.ITCM		(RW)  : ORIGIN = AFTER(ITCM), LENGTH = 0x0
+	arena.DTCM		(RW)  : ORIGIN = AFTER(DTCM), LENGTH = 0x0
+	binary.MODULE_FILES		(RW)  : ORIGIN = 0x0, LENGTH = 0x0     > component.files
+	check.ITCM			(RWX) : ORIGIN = 0x0, LENGTH = 0x08000 > itcm.check
+	check.DTCM			(RW)  : ORIGIN = 0x0, LENGTH = 0x04000 > dtcm.check
+}
+FORCE_ACTIVE
+{
+	SVC_SoftReset
+}
+KEEP_SECTION
+{
+	.sinit
+}
